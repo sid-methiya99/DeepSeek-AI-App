@@ -1,14 +1,14 @@
 package com.example.deepseekaiconventionalapp;
 
 import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int RC_SIGN_IN = 9001;
+    private GoogleSignInClient signInClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
