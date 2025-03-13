@@ -1,10 +1,13 @@
 package com.example.deepseekaiconventionalapp;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,34 +30,53 @@ public class MainActivity extends AppCompatActivity {
     private ListView messagesListView;
     private EditText messageInput;
     private Button sendButton;
+    private TextView userIdText;
     private List<ChatMessage> messagesList;
     private ChatMessageAdapter adapter;
     private SharedPreferences sharedPreferences;
     private String sessionId;
+    private ImageButton logoutButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Get SharedPreferences
+        sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        String token = sharedPreferences.getString("jwt_token", "");
+        
+        // If no token, redirect to login
+        if (token.isEmpty()) {
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            finish();
+            return;
+        }
+
         // Initialize views
         messagesListView = findViewById(R.id.messages_list);
         messageInput = findViewById(R.id.message_input);
         sendButton = findViewById(R.id.send_button);
+        userIdText = findViewById(R.id.user_id_text);
+        logoutButton = findViewById(R.id.logout_button);
+
+        // Set username in header
+        String username = sharedPreferences.getString("username", "User");
+        userIdText.setText(username);
 
         // Initialize message list and adapter
         messagesList = new ArrayList<>();
         adapter = new ChatMessageAdapter(this, messagesList);
         messagesListView.setAdapter(adapter);
 
-        // Get SharedPreferences
-        sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
-        
         // Start chat session
         startChatSession();
 
         // Set click listener for send button
         sendButton.setOnClickListener(v -> sendMessage());
+
+        // Set logout button click listener
+        logoutButton.setOnClickListener(v -> logout());
 
         // Make sure list scrolls to bottom when keyboard appears
         messagesListView.setTranscriptMode(ListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
@@ -62,14 +84,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startChatSession() {
-        String token = sharedPreferences.getString("jwt_token", "");
-        if (token.isEmpty()) {
-            Toast.makeText(this, "Please login first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         ApiServices apiServices = RetrofitClient.getApiService(this);
-        Call<ChatSessionStartResponse> call = apiServices.startChatSession("Bearer " + token);
+        Call<ChatSessionStartResponse> call = apiServices.startChatSession();
 
         call.enqueue(new Callback<ChatSessionStartResponse>() {
             @Override
@@ -78,7 +94,11 @@ public class MainActivity extends AppCompatActivity {
                     sessionId = response.body().getChatSessionId();
                     Toast.makeText(MainActivity.this, "Chat session started successfully", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(MainActivity.this, "Failed to start chat session", Toast.LENGTH_SHORT).show();
+                    if (response.code() == 401) {
+                        handleUnauthorized();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Failed to start chat session", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
 
@@ -93,26 +113,16 @@ public class MainActivity extends AppCompatActivity {
         String messageText = messageInput.getText().toString().trim();
         if (messageText.isEmpty()) return;
 
-        // Clear input field
         messageInput.setText("");
 
-        // Add user message to list
         ChatMessage userMessage = new ChatMessage("user", messageText, new Date(), true);
         messagesList.add(userMessage);
         adapter.notifyDataSetChanged();
         scrollToBottom();
 
-        // Get token from SharedPreferences
-        String token = sharedPreferences.getString("jwt_token", "");
-        if (token.isEmpty()) {
-            Toast.makeText(this, "Please login first", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Send message to server
         SendChatMessageRequest request = new SendChatMessageRequest(sessionId, messageText);
         ApiServices apiServices = RetrofitClient.getApiService(this);
-        Call<ChatMessageResponse> call = apiServices.sendChatMessage("Bearer " + token, request);
+        Call<ChatMessageResponse> call = apiServices.sendChatMessage(request);
 
         call.enqueue(new Callback<ChatMessageResponse>() {
             @Override
@@ -129,7 +139,11 @@ public class MainActivity extends AppCompatActivity {
                     adapter.notifyDataSetChanged();
                     scrollToBottom();
                 } else {
-                    Toast.makeText(MainActivity.this, "Failed to get response", Toast.LENGTH_SHORT).show();
+                    if (response.code() == 401) {
+                        handleUnauthorized();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Failed to get response", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
 
@@ -144,5 +158,32 @@ public class MainActivity extends AppCompatActivity {
         messagesListView.post(() -> {
             messagesListView.setSelection(adapter.getCount() - 1);
         });
+    }
+
+    // Add method to handle token expiration
+    private void handleUnauthorized() {
+        // Clear the token
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove("jwt_token");
+        editor.apply();
+
+        // Redirect to login
+        Toast.makeText(this, "Session expired. Please login again.", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(MainActivity.this, LoginActivity.class));
+        finish();
+    }
+
+    private void logout() {
+        // Clear all data from SharedPreferences
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        editor.apply();
+
+        // Redirect to login screen
+        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        intent.putExtra("fromLogout", true);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

@@ -8,7 +8,6 @@ import models.SendChatMessageRequest;
 import models.SignUpRequest;
 import retrofit2.Call;
 import retrofit2.http.Body;
-import retrofit2.http.Header;
 import retrofit2.http.POST;
 
 public interface ApiServices {
@@ -19,11 +18,8 @@ public interface ApiServices {
     Call<LoginResponse> signIn(@Body LoginRequest request);
 
     @POST("api/v1/chat/start")
-    Call<ChatSessionStartResponse> startChatSession(@Header("Authorization") String authorization);
+    Call<ChatSessionStartResponse> startChatSession();
 
     @POST("api/v1/chat/send")
-    Call<ChatMessageResponse> sendChatMessage(
-            @Header("Authorization") String authorization,
-            @Body SendChatMessageRequest sendChatMessageRequest
-    );
+    Call<ChatMessageResponse> sendChatMessage(@Body SendChatMessageRequest sendChatMessageRequest);
 }

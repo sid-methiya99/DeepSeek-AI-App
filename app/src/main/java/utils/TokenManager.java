@@ -16,14 +16,23 @@ public class TokenManager implements Interceptor {
 
     @Override
     public Response intercept(Chain chain) throws IOException {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        String token = sharedPreferences.getString("jwt_token", null);
-        Request.Builder requestBuilder = chain.request().newBuilder();
+        Request originalRequest = chain.request();
+        String path = originalRequest.url().encodedPath();
 
-        if (token != null && !token.isEmpty()) {
-            requestBuilder.addHeader("Authorization", "Bearer " + token);
+        // Only add token for chat endpoints
+        if (path.contains("/chat/")) {
+            // Get token from SharedPreferences
+            SharedPreferences sharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+            String token = sharedPreferences.getString("jwt_token", "");
+
+            // Add token to request header
+            Request newRequest = originalRequest.newBuilder()
+                    .header("Authorization", "Bearer " + token)
+                    .build();
+            return chain.proceed(newRequest);
         }
 
-        return chain.proceed(requestBuilder.build());
+        // For non-chat endpoints, proceed with original request
+        return chain.proceed(originalRequest);
     }
 }

@@ -31,12 +31,31 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check for existing token before setting content view
+        sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        
+        // Clear any existing token if we're on the login screen
+        if (!getIntent().getBooleanExtra("fromLogout", false)) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.clear();
+            editor.apply();
+        }
+
+        String token = sharedPreferences.getString("jwt_token", "");
+        
+        // If token exists, redirect to MainActivity
+        if (!token.isEmpty()) {
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_login);
 
         loginEmail = findViewById(R.id.login_email);
         loginPassword = findViewById(R.id.login_password);
         loginButton = findViewById(R.id.login_button);
-        sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
         signUpRedirectText = findViewById(R.id.signUpRedirectText);
 
         loginButton.setOnClickListener(v -> signIn());
@@ -50,7 +69,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void signIn(){
-
         String email = loginEmail.getText().toString().trim();
         String password = loginPassword.getText().toString().trim();
 
@@ -69,33 +87,42 @@ public class LoginActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     LoginResponse loginResponse = response.body();
                     if (loginResponse != null) {
-
-                        String token = loginResponse.getToken();
+                        // Clear any existing data first
                         SharedPreferences.Editor editor = sharedPreferences.edit();
-                        editor.putString("jwt_token", token);
+                        editor.clear();
+                        editor.apply();
+
+                        // Now set the new credentials
+                        editor = sharedPreferences.edit();
+                        editor.putString("jwt_token", loginResponse.getToken());
+                        editor.putString("user_email", loginResponse.getEmail());
+                        editor.putString("username", loginResponse.getUsername());
                         editor.apply();
 
                         Toast.makeText(LoginActivity.this, "Sign in successful!", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(LoginActivity.this, MainActivity.class); // Replace MainActivity.class
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                         startActivity(intent);
                         finish();
-                    } else {
-                        Toast.makeText(LoginActivity.this, "Sign in successful, but token is null!", Toast.LENGTH_SHORT).show();
-                        Log.e("LoginActivity", "AuthResponse body is null");
                     }
-                }
-                else {
-                    Toast.makeText(LoginActivity.this, "Sign in failed: " + response.message(), Toast.LENGTH_SHORT).show();
+                } else {
                     try {
-                        Log.e("LoginActivity", "Sign in failed: " + response.errorBody().string());
+                        // Parse the error response
+                        String errorBody = response.errorBody().string();
+                        if (errorBody.contains("Invalid credentials")) {
+                            Toast.makeText(LoginActivity.this, "Invalid email or password", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(LoginActivity.this, "Sign in failed: " + response.message(), Toast.LENGTH_SHORT).show();
+                        }
+                        Log.e("LoginActivity", "Sign in failed: " + errorBody);
                     } catch (Exception e) {
+                        Toast.makeText(LoginActivity.this, "Sign in failed", Toast.LENGTH_SHORT).show();
                         Log.e("LoginActivity", "Error getting error body: " + e.getMessage());
                     }
                 }
             }
             @Override
             public void onFailure(Call<LoginResponse> call, Throwable t) {
-                Toast.makeText(LoginActivity.this, "Sign in failed: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 Log.e("LoginActivity", "Sign in failed: " + t.getMessage(), t);
             }
         });
