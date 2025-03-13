@@ -3,19 +3,11 @@ package com.example.deepseekaiconventionalapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
 
 import api.ApiServices;
 import api.RetrofitClient;
@@ -55,7 +47,7 @@ public class SignUpActivity extends AppCompatActivity {
         }
 
         SignUpRequest signUpRequest = new SignUpRequest(email, username, password);
-        ApiServices apiServices = RetrofitClient.getApiService();
+        ApiServices apiServices = RetrofitClient.getApiService(this);
         Call<LoginResponse> call = apiServices.signUp(signUpRequest);
 
         call.enqueue(new Callback<LoginResponse>() {
@@ -67,6 +59,7 @@ public class SignUpActivity extends AppCompatActivity {
                         Toast.makeText(SignUpActivity.this, "Signup Successful", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(SignUpActivity.this, LoginActivity.class);
                         startActivity(intent);
+                        finish();
                     }
                 }
             }
