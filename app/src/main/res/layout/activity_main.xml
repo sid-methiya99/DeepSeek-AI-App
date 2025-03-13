@@ -35,31 +35,30 @@
     </RelativeLayout>
 
     <!-- Messages List -->
-
-    <!-- Message Input Layout -->
     <ListView
         android:id="@+id/messages_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/message_input_layout"
         android:layout_below="@id/chat_header"
-        android:layout_marginTop="-129dp"
-        android:layout_marginBottom="129dp"
         android:divider="@null"
         android:dividerHeight="0dp"
         android:paddingStart="8dp"
         android:paddingTop="8dp"
         android:paddingEnd="8dp"
         android:paddingBottom="8dp"
+        android:clipToPadding="false"
         android:stackFromBottom="true"
         android:transcriptMode="alwaysScroll" />
 
+    <!-- Message Input Layout -->
     <LinearLayout
         android:id="@+id/message_input_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
+        android:elevation="4dp"
         android:orientation="horizontal"
         android:padding="8dp">
 
