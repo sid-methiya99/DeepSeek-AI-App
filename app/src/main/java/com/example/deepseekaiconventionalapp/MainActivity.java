@@ -2,10 +2,13 @@ package com.example.deepseekaiconventionalapp;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,13 +32,15 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity {
     private ListView messagesListView;
     private EditText messageInput;
-    private Button sendButton;
+    private ImageButton sendButton;
     private TextView userIdText;
     private List<ChatMessage> messagesList;
     private ChatMessageAdapter adapter;
     private SharedPreferences sharedPreferences;
     private String sessionId;
     private ImageButton logoutButton;
+    private boolean isTypingIndicatorShown = false;
+    private String savedSessionId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,14 +51,23 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
         String token = sharedPreferences.getString("jwt_token", "");
         
-        // If no token, redirect to login
         if (token.isEmpty()) {
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
             return;
         }
 
-        // Initialize views
+        // Initialize views and setup
+        initializeViews();
+        setupAdapter();
+
+        // Only start new chat session if we don't have a saved one
+        if (savedSessionId.isEmpty()) {
+            startChatSession();
+        }
+    }
+
+    private void initializeViews() {
         messagesListView = findViewById(R.id.messages_list);
         messageInput = findViewById(R.id.message_input);
         sendButton = findViewById(R.id.send_button);
@@ -62,25 +76,36 @@ public class MainActivity extends AppCompatActivity {
 
         // Set username in header
         String username = sharedPreferences.getString("username", "User");
-        userIdText.setText(username);
+        userIdText.setText("Hello, " + username);
 
         // Initialize message list and adapter
         messagesList = new ArrayList<>();
         adapter = new ChatMessageAdapter(this, messagesList);
         messagesListView.setAdapter(adapter);
 
-        // Start chat session
-        startChatSession();
+        // Get saved session ID
+        savedSessionId = sharedPreferences.getString("last_session_id", "");
+        
+        if (!savedSessionId.isEmpty()) {
+            // Use existing session and fetch history
+            sessionId = savedSessionId;
+            fetchChatHistory();
+        }
 
-        // Set click listener for send button
+        // Set click listeners
         sendButton.setOnClickListener(v -> sendMessage());
-
-        // Set logout button click listener
         logoutButton.setOnClickListener(v -> logout());
 
         // Make sure list scrolls to bottom when keyboard appears
         messagesListView.setTranscriptMode(ListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
         messagesListView.setStackFromBottom(true);
+    }
+
+    private void setupAdapter() {
+        // Initialize message list and adapter
+        messagesList = new ArrayList<>();
+        adapter = new ChatMessageAdapter(this, messagesList);
+        messagesListView.setAdapter(adapter);
     }
 
     private void startChatSession() {
@@ -92,6 +117,15 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call<ChatSessionStartResponse> call, Response<ChatSessionStartResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     sessionId = response.body().getChatSessionId();
+                    // Save the session ID to SharedPreferences
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putString("last_session_id", sessionId);
+                    editor.apply();
+                    
+                    android.util.Log.d("MainActivity", "New session ID: " + sessionId);
+                    
+                    // After getting sessionId, fetch chat history
+                    fetchChatHistory();
                     Toast.makeText(MainActivity.this, "Chat session started successfully", Toast.LENGTH_SHORT).show();
                 } else {
                     if (response.code() == 401) {
@@ -109,6 +143,65 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void fetchChatHistory() {
+        if (sessionId == null || sessionId.isEmpty()) return;
+
+        ApiServices apiServices = RetrofitClient.getApiService(this);
+        Call<List<ChatMessage>> call = apiServices.getChatHistory(sessionId);
+
+        call.enqueue(new Callback<List<ChatMessage>>() {
+            @Override
+            public void onResponse(Call<List<ChatMessage>> call, Response<List<ChatMessage>> response) {
+                if (response.isSuccessful()) {
+                    List<ChatMessage> history = response.body();
+                    if (history != null && !history.isEmpty()) {
+                        // Clear existing messages
+                        messagesList.clear();
+                        
+                        // Add messages from history
+                        for (ChatMessage message : history) {
+                            // Create new ChatMessage objects to ensure proper formatting
+                            messagesList.add(new ChatMessage(
+                                message.isUserMessage() ? "user" : "bot",
+                                message.getContent(),
+                                message.getTimestamp(),
+                                message.isUserMessage()
+                            ));
+                        }
+                        
+                        // Update UI
+                        adapter.notifyDataSetChanged();
+                        scrollToBottom();
+                    }
+                } else if (response.code() == 401) {
+                    handleUnauthorized();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<ChatMessage>> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Error fetching history: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void showTypingIndicator() {
+        if (!isTypingIndicatorShown) {
+            messagesList.add(new ChatMessage("bot", "", new Date(), false));
+            adapter.notifyDataSetChanged();
+            scrollToBottom();
+            isTypingIndicatorShown = true;
+        }
+    }
+
+    private void hideTypingIndicator() {
+        if (isTypingIndicatorShown) {
+            messagesList.remove(messagesList.size() - 1);
+            adapter.notifyDataSetChanged();
+            isTypingIndicatorShown = false;
+        }
+    }
+
     private void sendMessage() {
         String messageText = messageInput.getText().toString().trim();
         if (messageText.isEmpty()) return;
@@ -120,6 +213,9 @@ public class MainActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
         scrollToBottom();
 
+        // Show typing indicator
+        showTypingIndicator();
+
         SendChatMessageRequest request = new SendChatMessageRequest(sessionId, messageText);
         ApiServices apiServices = RetrofitClient.getApiService(this);
         Call<ChatMessageResponse> call = apiServices.sendChatMessage(request);
@@ -127,8 +223,9 @@ public class MainActivity extends AppCompatActivity {
         call.enqueue(new Callback<ChatMessageResponse>() {
             @Override
             public void onResponse(Call<ChatMessageResponse> call, Response<ChatMessageResponse> response) {
+                hideTypingIndicator();
+
                 if (response.isSuccessful() && response.body() != null) {
-                    // Add bot response to list
                     ChatMessage botMessage = new ChatMessage(
                         "bot",
                         response.body().getReply(),
@@ -149,6 +246,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ChatMessageResponse> call, Throwable t) {
+                hideTypingIndicator();
                 Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
@@ -174,7 +272,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void logout() {
-        // Clear all data from SharedPreferences
+        // Clear all data including session ID
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
         editor.apply();

@@ -1,11 +1,25 @@
 package models;
 
 import java.util.Date;
+import com.google.gson.annotations.SerializedName;
 
 public class ChatMessage {
+    @SerializedName("_id")
+    private String id;
+    
+    @SerializedName("chatSession")
+    private String chatSession;
+    
+    @SerializedName("sender")
     private String sender; // User or "Gemini"
+    
+    @SerializedName("content")
     private String content; // The actual message
+    
+    @SerializedName("timestamp")
     private Date timestamp;
+    
+    @SerializedName("isUserMessage")
     private boolean isUserMessage; // True if sent by the user, false if Gemini
 
     public ChatMessage() {
@@ -18,6 +32,21 @@ public class ChatMessage {
         this.isUserMessage = isUserMessage;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getChatSession() {
+        return chatSession;
+    }
+
+    public void setChatSession(String chatSession) {
+        this.chatSession = chatSession;
+    }
 
     public String getSender() {
         return sender;
@@ -28,7 +57,7 @@ public class ChatMessage {
     }
 
     public String getContent() {
-        return content;
+        return content != null ? content : "";
     }
 
     public void setContent(String content) {

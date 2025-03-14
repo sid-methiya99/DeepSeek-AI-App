@@ -35,8 +35,9 @@ public class LoginActivity extends AppCompatActivity {
         // Check for existing token before setting content view
         sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
         
-        // Clear any existing token if we're on the login screen
-        if (!getIntent().getBooleanExtra("fromLogout", false)) {
+        // Only clear token if we're coming from logout
+        boolean fromLogout = getIntent().getBooleanExtra("fromLogout", false);
+        if (fromLogout) {
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.clear();
             editor.apply();
@@ -44,8 +45,8 @@ public class LoginActivity extends AppCompatActivity {
 
         String token = sharedPreferences.getString("jwt_token", "");
         
-        // If token exists, redirect to MainActivity
-        if (!token.isEmpty()) {
+        // If token exists and we're not coming from logout, redirect to MainActivity
+        if (!token.isEmpty() && !fromLogout) {
             startActivity(new Intent(LoginActivity.this, MainActivity.class));
             finish();
             return;
@@ -53,6 +54,7 @@ public class LoginActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_login);
 
+        // Initialize views
         loginEmail = findViewById(R.id.login_email);
         loginPassword = findViewById(R.id.login_password);
         loginButton = findViewById(R.id.login_button);
@@ -97,6 +99,13 @@ public class LoginActivity extends AppCompatActivity {
                         editor.putString("jwt_token", loginResponse.getToken());
                         editor.putString("user_email", loginResponse.getEmail());
                         editor.putString("username", loginResponse.getUsername());
+                        
+                        // Save the recent chat session ID if it exists
+                        String recentSessionId = loginResponse.getRecentChatSessionId();
+                        if (recentSessionId != null && !recentSessionId.isEmpty()) {
+                            editor.putString("last_session_id", recentSessionId);
+                        }
+                        
                         editor.apply();
 
                         Toast.makeText(LoginActivity.this, "Sign in successful!", Toast.LENGTH_SHORT).show();

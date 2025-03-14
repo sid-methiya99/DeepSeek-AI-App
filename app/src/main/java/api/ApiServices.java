@@ -1,5 +1,6 @@
 package api;
 
+import models.ChatMessage;
 import models.ChatMessageResponse;
 import models.ChatSessionStartResponse;
 import models.LoginRequest;
@@ -8,7 +9,11 @@ import models.SendChatMessageRequest;
 import models.SignUpRequest;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
+
+import java.util.List;
 
 public interface ApiServices {
     @POST("api/v1/user/signup")
@@ -22,4 +27,7 @@ public interface ApiServices {
 
     @POST("api/v1/chat/send")
     Call<ChatMessageResponse> sendChatMessage(@Body SendChatMessageRequest sendChatMessageRequest);
+
+    @GET("api/v1/chat/history/{chatSessionId}")
+    Call<List<ChatMessage>> getChatHistory(@Path("chatSessionId") String chatSessionId);
 }

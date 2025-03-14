@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <animation-list android:oneshot="false">
+            <item android:drawable="@drawable/typing_dot_1" android:duration="400" />
+            <item android:drawable="@drawable/typing_dot_2" android:duration="400" />
+            <item android:drawable="@drawable/typing_dot_3" android:duration="400" />
+        </animation-list>
+    </item>
+    <item android:left="12dp">
+        <animation-list android:oneshot="false">
+            <item android:drawable="@drawable/typing_dot_2" android:duration="400" />
+            <item android:drawable="@drawable/typing_dot_3" android:duration="400" />
+            <item android:drawable="@drawable/typing_dot_1" android:duration="400" />
+        </animation-list>
+    </item>
+    <item android:left="24dp">
+        <animation-list android:oneshot="false">
+            <item android:drawable="@drawable/typing_dot_3" android:duration="400" />
+            <item android:drawable="@drawable/typing_dot_1" android:duration="400" />
+            <item android:drawable="@drawable/typing_dot_2" android:duration="400" />
+        </animation-list>
+    </item>
+</layer-list> 
