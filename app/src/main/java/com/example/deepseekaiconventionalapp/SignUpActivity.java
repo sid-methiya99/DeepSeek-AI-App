@@ -1,6 +1,7 @@
 package com.example.deepseekaiconventionalapp;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -18,28 +19,35 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class SignUpActivity extends AppCompatActivity {
-    private EditText signUpUsername, signUpEmail, signUpPassword;
-    private Button signUpButton;
-    private TextView loginRedirect;
+    private EditText signupUsername, signupEmail, signupPassword;
+    private Button signupButton;
+    private TextView loginLink;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sign_up);
+        setContentView(R.layout.activity_signup);
 
-        signUpUsername = findViewById(R.id.signup_username);
-        signUpEmail = findViewById(R.id.signup_email);
-        signUpPassword = findViewById(R.id.signup_password);
-        signUpButton = findViewById(R.id.signup_button);
-        loginRedirect = findViewById(R.id.loginRedirectText);
+        signupUsername = findViewById(R.id.signup_username);
+        signupEmail = findViewById(R.id.signup_email);
+        signupPassword = findViewById(R.id.signup_password);
+        signupButton = findViewById(R.id.signup_button);
+        loginLink = findViewById(R.id.login_link);
 
-        signUpButton.setOnClickListener(v -> signUp());
+        sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+
+        signupButton.setOnClickListener(v -> signUp());
+        loginLink.setOnClickListener(v -> {
+            startActivity(new Intent(SignUpActivity.this, LoginActivity.class));
+            finish();
+        });
     }
 
     private void signUp(){
-        String username = signUpUsername.getText().toString().trim();
-        String email = signUpEmail.getText().toString().trim();
-        String password = signUpPassword.getText().toString().trim();
+        String username = signupUsername.getText().toString().trim();
+        String email = signupEmail.getText().toString().trim();
+        String password = signupPassword.getText().toString().trim();
 
         if(username.isEmpty() || email.isEmpty() || password.isEmpty()){
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();

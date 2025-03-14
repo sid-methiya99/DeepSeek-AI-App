@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "786546277410",
+    "project_id": "deepseekaiapp-f35fa",
+    "storage_bucket": "deepseekaiapp-f35fa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:786546277410:android:fd2ba18b89e4a03ffe5e7b",
+        "android_client_info": {
+          "package_name": "com.example.deepseekaiconventionalapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "786546277410-uaebq4e19j3frnghq7428j4bdf578jgm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.deepseekaiconventionalapp",
+            "certificate_hash": "6da68755af675919fa6936db71e1ad6854a25f1e"
+          }
+        },
+        {
+          "client_id": "786546277410-6t1tc7va7a2tbfk9tiu6j8lrold7mdk2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjUQN8viCubeKyoysCw8-de7HixlFOof8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "786546277410-6t1tc7va7a2tbfk9tiu6j8lrold7mdk2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

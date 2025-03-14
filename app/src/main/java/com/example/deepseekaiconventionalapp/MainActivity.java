@@ -14,6 +14,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+
+import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +28,7 @@ import api.RetrofitClient;
 import models.ChatMessage;
 import models.ChatMessageResponse;
 import models.ChatSessionStartResponse;
+import models.CloseChatSessionRequest;
 import models.SendChatMessageRequest;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -41,6 +46,12 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton logoutButton;
     private boolean isTypingIndicatorShown = false;
     private String savedSessionId;
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private ImageButton menuButton;
+    private ImageButton newChatButton;
+    private TextView chatTitle;
+    private View welcomeMessageLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,13 +68,23 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // Initialize views and setup
+        // Get saved session ID
+        savedSessionId = sharedPreferences.getString("last_session_id", "");
+
+        // Initialize message list and adapter first
+        messagesList = new ArrayList<>();
+        adapter = new ChatMessageAdapter(this, messagesList);
+
+        // Then initialize views
         initializeViews();
-        setupAdapter();
 
         // Only start new chat session if we don't have a saved one
         if (savedSessionId.isEmpty()) {
             startChatSession();
+        } else {
+            // Use existing session
+            sessionId = savedSessionId;
+            fetchChatHistory();
         }
     }
 
@@ -71,34 +92,30 @@ public class MainActivity extends AppCompatActivity {
         messagesListView = findViewById(R.id.messages_list);
         messageInput = findViewById(R.id.message_input);
         sendButton = findViewById(R.id.send_button);
-        userIdText = findViewById(R.id.user_id_text);
-        logoutButton = findViewById(R.id.logout_button);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
+        menuButton = findViewById(R.id.menu_button);
+        newChatButton = findViewById(R.id.new_chat_button);
+        chatTitle = findViewById(R.id.chat_title);
+        welcomeMessageLayout = findViewById(R.id.welcome_message_layout);
 
-        // Set username in header
-        String username = sharedPreferences.getString("username", "User");
-        userIdText.setText("Hello, " + username);
-
-        // Initialize message list and adapter
-        messagesList = new ArrayList<>();
-        adapter = new ChatMessageAdapter(this, messagesList);
+        // Set adapter
         messagesListView.setAdapter(adapter);
-
-        // Get saved session ID
-        savedSessionId = sharedPreferences.getString("last_session_id", "");
-        
-        if (!savedSessionId.isEmpty()) {
-            // Use existing session and fetch history
-            sessionId = savedSessionId;
-            fetchChatHistory();
-        }
 
         // Set click listeners
         sendButton.setOnClickListener(v -> sendMessage());
-        logoutButton.setOnClickListener(v -> logout());
+        menuButton.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
+        newChatButton.setOnClickListener(v -> startNewChat());
 
         // Make sure list scrolls to bottom when keyboard appears
         messagesListView.setTranscriptMode(ListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
         messagesListView.setStackFromBottom(true);
+
+        // Setup navigation drawer
+        setupNavigationDrawer();
+
+        // Show welcome message if no messages
+        updateWelcomeMessageVisibility();
     }
 
     private void setupAdapter() {
@@ -171,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
                         
                         // Update UI
                         adapter.notifyDataSetChanged();
+                        updateWelcomeMessageVisibility();
                         scrollToBottom();
                     }
                 } else if (response.code() == 401) {
@@ -211,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
         ChatMessage userMessage = new ChatMessage("user", messageText, new Date(), true);
         messagesList.add(userMessage);
         adapter.notifyDataSetChanged();
+        updateWelcomeMessageVisibility();
         scrollToBottom();
 
         // Show typing indicator
@@ -234,6 +253,7 @@ public class MainActivity extends AppCompatActivity {
                     );
                     messagesList.add(botMessage);
                     adapter.notifyDataSetChanged();
+                    updateWelcomeMessageVisibility();
                     scrollToBottom();
                 } else {
                     if (response.code() == 401) {
@@ -283,5 +303,108 @@ public class MainActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private void setupNavigationDrawer() {
+        // Remove any existing header views
+        navigationView.removeHeaderView(navigationView.getHeaderView(0));
+        
+        // Inflate the navigation header layout only once
+        View headerView = navigationView.inflateHeaderView(R.layout.nav_header);
+        
+        // Set user info in header
+        TextView userNameView = headerView.findViewById(R.id.nav_header_name);
+        TextView userEmailView = headerView.findViewById(R.id.nav_header_email);
+        
+        String username = sharedPreferences.getString("username", "User");
+        String email = sharedPreferences.getString("user_email", "");
+        
+        userNameView.setText(username);
+        userEmailView.setText(email);
+
+        // Setup menu items
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_logout) {
+                drawerLayout.closeDrawer(GravityCompat.START);  // Close drawer before logout
+                logout();
+                return true;
+            }
+            return false;
+        });
+
+        // Add drawer close listener
+        drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
+            @Override
+            public void onDrawerSlide(View drawerView, float slideOffset) {}
+
+            @Override
+            public void onDrawerOpened(View drawerView) {}
+
+            @Override
+            public void onDrawerClosed(View drawerView) {}
+
+            @Override
+            public void onDrawerStateChanged(int newState) {}
+        });
+    }
+
+    private void startNewChat() {
+        // Check if we're already in a new chat (no messages)
+        if (messagesList.isEmpty()) {
+            Toast.makeText(this, "Already in new chat", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // First close the current session
+        closeCurrentSession(() -> {
+            // Clear messages and start new session
+            messagesList.clear();
+            adapter.notifyDataSetChanged();
+            updateWelcomeMessageVisibility();
+            startChatSession();
+        });
+    }
+
+    private void closeCurrentSession(Runnable onSuccess) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            onSuccess.run();
+            return;
+        }
+
+        ApiServices apiServices = RetrofitClient.getApiService(this);
+        CloseChatSessionRequest request = new CloseChatSessionRequest(sessionId);
+        Call<Void> call = apiServices.closeChatSession(request);
+
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    // Clear session ID from SharedPreferences
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.remove("last_session_id");
+                    editor.apply();
+                    
+                    onSuccess.run();
+                } else {
+                    Toast.makeText(MainActivity.this, "Failed to close chat session", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Error closing chat session", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void updateWelcomeMessageVisibility() {
+        if (messagesList.isEmpty()) {
+            welcomeMessageLayout.setVisibility(View.VISIBLE);
+            messagesListView.setVisibility(View.GONE);
+        } else {
+            welcomeMessageLayout.setVisibility(View.GONE);
+            messagesListView.setVisibility(View.VISIBLE);
+        }
     }
 }

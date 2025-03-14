@@ -1,108 +1,159 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:layout_height="match_parent">
 
-    <!-- Chat Header -->
+    <!-- Main Content -->
     <RelativeLayout
-        android:id="@+id/chat_header"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/navbar_background"
-        android:elevation="4dp"
-        android:paddingTop="32dp"
-        android:paddingBottom="10dp">
+        android:layout_height="match_parent"
+        android:background="@color/dark_background">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Chat Header -->
+        <RelativeLayout
+            android:id="@+id/chat_header"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="16dp"
-            android:text="DeepSeek"
-            android:textColor="#FFFFFF"
-            android:textSize="24sp"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.05" />
+            android:background="@color/dark_surface"
+            android:elevation="4dp"
+            android:paddingTop="32dp"
+            android:paddingBottom="10dp">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="16dp"
-            android:orientation="horizontal"
-            android:padding="8dp">
+            <!-- Menu Button (Left) -->
+            <ImageButton
+                android:id="@+id/menu_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_menu"
+                android:contentDescription="Menu"
+                app:tint="@color/dark_text_primary" />
 
+            <!-- Title (Center) -->
             <TextView
-                android:id="@+id/user_id_text"
+                android:id="@+id/chat_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif" />
+                android:layout_centerInParent="true"
+                android:text="New Chat"
+                android:textColor="@color/dark_text_primary"
+                android:textSize="20sp"
+                android:fontFamily="sans-serif-medium" />
+
+            <!-- New Chat Button (Right) -->
+            <ImageButton
+                android:id="@+id/new_chat_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_new_chat"
+                android:contentDescription="New Chat"
+                app:tint="@color/dark_text_primary" />
+        </RelativeLayout>
+
+        <!-- Welcome Message -->
+        <RelativeLayout
+            android:id="@+id/welcome_message_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/chat_header"
+            android:layout_above="@id/message_input_layout"
+            android:gravity="center">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hi, I'm Deepseek"
+                    android:textSize="24sp"
+                    android:textColor="@color/dark_text_primary"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="How can I help you today?"
+                    android:textSize="16sp"
+                    android:textColor="@color/dark_text_secondary"/>
+            </LinearLayout>
+        </RelativeLayout>
+
+        <!-- Messages List -->
+        <ListView
+            android:id="@+id/messages_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@id/message_input_layout"
+            android:layout_below="@id/chat_header"
+            android:divider="@null"
+            android:dividerHeight="0dp"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            android:stackFromBottom="true"
+            android:transcriptMode="alwaysScroll"
+            android:background="@color/dark_background" />
+
+        <!-- Message Input Layout -->
+        <LinearLayout
+            android:id="@+id/message_input_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="@color/dark_surface"
+            android:elevation="8dp"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <EditText
+                android:id="@+id/message_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/dark_input_background"
+                android:hint="Type your message..."
+                android:maxLines="3"
+                android:minHeight="48dp"
+                android:padding="12dp"
+                android:textSize="16sp"
+                android:textColor="@color/dark_text_primary"
+                android:textColorHint="@color/dark_text_secondary"
+                android:layout_marginEnd="8dp" />
 
             <ImageButton
-                android:id="@+id/logout_button"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_logout"
-                android:padding="2dp"
-                android:contentDescription="Logout" />
+                android:id="@+id/send_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/dark_button_background"
+                android:src="@drawable/ic_send"
+                android:contentDescription="Send"
+                app:tint="@color/dark_button_text" />
         </LinearLayout>
     </RelativeLayout>
 
-    <!-- Messages List -->
-    <ListView
-        android:id="@+id/messages_list"
-        android:layout_width="match_parent"
+    <!-- Navigation Drawer -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_above="@id/message_input_layout"
-        android:layout_below="@id/chat_header"
-        android:divider="@null"
-        android:dividerHeight="0dp"
-        android:paddingStart="8dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="8dp"
-        android:paddingBottom="8dp"
-        android:clipToPadding="false"
-        android:stackFromBottom="true"
-        android:transcriptMode="alwaysScroll"
-        android:background="#FFFFFF" />
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        android:background="@color/dark_surface"
+        app:itemTextColor="@color/dark_text_primary"
+        app:itemIconTint="@color/dark_text_primary"
+        app:headerLayout="@layout/nav_header"
+        app:menu="@menu/nav_menu" />
 
-    <!-- Message Input Layout -->
-    <LinearLayout
-        android:id="@+id/message_input_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="#FFFFFF"
-        android:elevation="8dp"
-        android:orientation="horizontal"
-        android:padding="12dp">
-
-        <EditText
-            android:id="@+id/message_input"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/message_input_background"
-            android:hint="Type your message..."
-            android:maxLines="3"
-            android:minHeight="48dp"
-            android:padding="12dp"
-            android:textSize="16sp"
-            android:textColorHint="#9E9E9E"
-            android:layout_marginEnd="8dp" />
-
-        <ImageButton
-            android:id="@+id/send_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/send_button_background"
-            android:src="@drawable/ic_send"
-            android:contentDescription="Send" />
-    </LinearLayout>
-</RelativeLayout>
+</androidx.drawerlayout.widget.DrawerLayout>

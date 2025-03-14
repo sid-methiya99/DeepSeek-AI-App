@@ -24,8 +24,8 @@ import retrofit2.Response;
 public class LoginActivity extends AppCompatActivity {
 
     private EditText loginEmail, loginPassword;
-    private TextView signUpRedirectText;
     private Button loginButton;
+    private TextView signupLink;
     private SharedPreferences sharedPreferences;
 
     @Override
@@ -58,11 +58,11 @@ public class LoginActivity extends AppCompatActivity {
         loginEmail = findViewById(R.id.login_email);
         loginPassword = findViewById(R.id.login_password);
         loginButton = findViewById(R.id.login_button);
-        signUpRedirectText = findViewById(R.id.signUpRedirectText);
+        signupLink = findViewById(R.id.signup_link);
 
         loginButton.setOnClickListener(v -> signIn());
 
-        signUpRedirectText.setOnClickListener(new View.OnClickListener() {
+        signupLink.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(LoginActivity.this, SignUpActivity.class));
