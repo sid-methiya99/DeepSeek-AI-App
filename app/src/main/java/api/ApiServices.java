@@ -7,6 +7,8 @@ import models.LoginRequest;
 import models.LoginResponse;
 import models.SendChatMessageRequest;
 import models.SignUpRequest;
+import models.ChatSession;
+import models.CloseChatSessionRequest;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -30,4 +32,10 @@ public interface ApiServices {
 
     @GET("api/v1/chat/history/{chatSessionId}")
     Call<List<ChatMessage>> getChatHistory(@Path("chatSessionId") String chatSessionId);
+
+    @GET("api/v1/chat/sessions")
+    Call<List<ChatSession>> getChatSessions();
+
+    @POST("api/v1/chat/close")
+    Call<ChatSession> closeChatSession(@Body CloseChatSessionRequest request);
 }
